@@ -1,7 +1,6 @@
 package direct
 
 import (
-	"strings"
 	"time"
 
 	"github.com/lestrrat-go/jwx/v2/jwa"
@@ -9,34 +8,32 @@ import (
 	"github.com/pmoieni/auth/config"
 )
 
-type AuthTokensRes struct {
-	IDToken      string
-	AccessToken  string
-	RefreshToken string
-}
-
-type RefreshTokenRes struct {
-	AccessToken  string
-	RefreshToken string
-}
-
-type idTokenClaims struct {
-	username string
-	email    string
-	//	emailVerified bool
-	picture string
-}
-
-type accessTokenClaims struct {
-	email    string
-	clientID string
-	//	role     string
-	scope []string
-}
-
-type refreshTokenClaims struct {
-	clientID string
-}
+type (
+	AuthTokensRes struct {
+		IDToken      string
+		AccessToken  string
+		RefreshToken string
+	}
+	RefreshTokenRes struct {
+		AccessToken  string
+		RefreshToken string
+	}
+	idTokenClaims struct {
+		username string
+		email    string
+		//	emailVerified bool
+		picture string
+	}
+	accessTokenClaims struct {
+		email    string
+		clientID string
+		//	role     string
+		// scope []string
+	}
+	refreshTokenClaims struct {
+		clientID string
+	}
+)
 
 const (
 	IDTokenExpiry      = time.Hour * 10
@@ -74,7 +71,7 @@ func genIDToken(c *idTokenClaims) (string, error) {
 }
 
 func genAccessToken(c *accessTokenClaims) (string, error) {
-	scope := strings.Join(c.scope, " ")
+	// scope := strings.Join(c.scope, " ")
 	token, err := jwt.NewBuilder().
 		Issuer("http://localhost:8080").
 		Subject(c.clientID).
@@ -82,7 +79,7 @@ func genAccessToken(c *accessTokenClaims) (string, error) {
 		IssuedAt(time.Now().UTC()).
 		Expiration(time.Now().UTC().Add(AccessTokenExpiry)).
 		Claim("email", c.email).
-		Claim("scope", scope).
+		// Claim("scope", scope).
 		// Claim("role", c.role).
 		Build()
 	if err != nil {
@@ -148,15 +145,15 @@ func parseRefreshToken(token string) (payload jwt.Token, err error) {
 }
 
 // checks access token validity and returns its payload
-// func parseAccessTokenWithValidate(token string) (payload jwt.Token, err error) {
-// 	c, err := config.LoadConfig(".")
-// 	if err != nil {
-// 		return
-// 	}
+func parseAccessTokenWithValidate(token string) (payload jwt.Token, err error) {
+	c, err := config.LoadConfig(".")
+	if err != nil {
+		return
+	}
 
-// 	payload, err = jwt.Parse([]byte(token), jwt.WithKey(jwa.HS256, []byte(c.JWTAccessTokenSecret)), jwt.WithValidate(true))
-// 	return
-// }
+	payload, err = jwt.Parse([]byte(token), jwt.WithKey(jwa.HS256, []byte(c.JWTAccessTokenSecret)), jwt.WithValidate(true))
+	return
+}
 
 // checks access token validity and returns its payload
 func parseRefreshTokenWithValidate(token string) (payload jwt.Token, err error) {
