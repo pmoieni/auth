@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"github.com/pmoieni/auth/log"
 )
 
@@ -34,6 +33,7 @@ func (s *Server) Run(addr string) {
 	// Listen for syscall signals for process to interrupt/quit
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	// implement graceful shutdown for unexpected signals
 	go func() {
 		<-sig
 
@@ -70,10 +70,5 @@ func (s *Server) Run(addr string) {
 func (s *Server) init() {
 	s.Handler = echo.New()
 	s.Handler.HTTPErrorHandler = customHTTPErrorHandler
-	c := middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:3000"},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
-	}
-	s.Handler.Use(middleware.CORSWithConfig(c))
 	s.initRoutes()
 }

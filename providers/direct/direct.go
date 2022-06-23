@@ -3,6 +3,7 @@ package direct
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -59,7 +60,7 @@ func (c *UserRegisterInfo) Register() (err error) {
 
 	if err != nil {
 		if err != nil && errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
-			err = &models.ErrorResponse{Status: http.StatusConflict, Message: errAlreadyUserExists}
+			err = &models.ErrorResponse{Status: http.StatusConflict, Message: errUserAlreadyExists}
 		}
 		return
 	}
@@ -79,7 +80,6 @@ func (c *UserLoginCreds) Login() (tokens AuthTokensRes, err error) {
 	}
 
 	// get user info from database to create new authentication tokens
-	// TODO: check for user not found error
 	userInfo, err := u.GetUser()
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -89,10 +89,12 @@ func (c *UserLoginCreds) Login() (tokens AuthTokensRes, err error) {
 	}
 
 	// check user password
-	// TODO: check if password was wrong and return and error
 	err = bcrypt.CompareHashAndPassword([]byte(userInfo.Password), []byte(c.Password))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			err = &models.ErrorResponse{Status: http.StatusUnauthorized, Message: errWrongPassword}
+		}
+		if errors.Is(err, bcrypt.ErrHashTooShort) {
 			err = &models.ErrorResponse{Status: http.StatusUnauthorized, Message: errWrongPassword}
 		}
 		return
@@ -122,6 +124,7 @@ func (c *UserLoginCreds) Login() (tokens AuthTokensRes, err error) {
 	}
 
 	refreshClaims := refreshTokenClaims{
+		email:    u.Email,
 		clientID: clientID,
 	}
 	rt, err := genRefreshToken(&refreshClaims)
@@ -137,20 +140,16 @@ func (c *UserLoginCreds) Login() (tokens AuthTokensRes, err error) {
 	return
 }
 
-func RefreshToken(rt, at string) (tokens RefreshTokenRes, err error) {
+func RefreshToken(rt string) (tokens RefreshTokenRes, err error) {
+	fmt.Println(rt + "\n")
+
 	// validate and parse the refresh token
 	rtPayload, err := parseRefreshTokenWithValidate(rt)
 	if err != nil {
 		return
 	}
 
-	// just parse the payload and verify signature of access token since we know it's expired
-	atPayload, err := parseAccessToken(at)
-	if err != nil {
-		return
-	}
-
-	privateClaims := atPayload.PrivateClaims()
+	privateClaims := rtPayload.PrivateClaims()
 
 	email, ok := privateClaims["email"].(string)
 	if !ok {
@@ -188,12 +187,6 @@ func RefreshToken(rt, at string) (tokens RefreshTokenRes, err error) {
 		return
 	}
 
-	// check if the client id of refresh token and access token match
-	if atPayload.Subject() != rtPayload.Subject() {
-		err = &models.ErrorResponse{Status: http.StatusUnauthorized, Message: http.StatusText(http.StatusUnauthorized)}
-		return
-	}
-
 	// if the client id is revoked then the token is invalid and is reused by malicious user
 	revoked, err := isClientIDRevoked(rtPayload.Subject())
 	if err != nil {
@@ -208,7 +201,7 @@ func RefreshToken(rt, at string) (tokens RefreshTokenRes, err error) {
 	// scopeArr := strings.Fields(scope)
 	newATClaims := accessTokenClaims{
 		email:    email,
-		clientID: atPayload.Subject(),
+		clientID: rtPayload.Subject(),
 		// role:     role,
 		// scope:    scopeArr,
 	}
@@ -219,6 +212,7 @@ func RefreshToken(rt, at string) (tokens RefreshTokenRes, err error) {
 
 	// generate new refresh token form previous access token claims
 	newRTClaims := refreshTokenClaims{
+		email:    email,
 		clientID: rtPayload.Subject(),
 	}
 	newRT, err := genRefreshToken(&newRTClaims)

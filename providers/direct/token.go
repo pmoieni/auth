@@ -31,6 +31,7 @@ type (
 		// scope []string
 	}
 	refreshTokenClaims struct {
+		email    string
 		clientID string
 	}
 )
@@ -106,6 +107,7 @@ func genRefreshToken(c *refreshTokenClaims) (string, error) {
 		Audience([]string{"http://localhost:3000"}).
 		IssuedAt(time.Now().UTC()).
 		Expiration(time.Now().UTC().Add(RefreshTokenExpiry)).
+		Claim("email", c.email).
 		Build()
 	if err != nil {
 		return "", err
@@ -124,15 +126,16 @@ func genRefreshToken(c *refreshTokenClaims) (string, error) {
 	return string(signed), nil
 }
 
-func parseAccessToken(token string) (payload jwt.Token, err error) {
-	c, err := config.LoadConfig(".")
-	if err != nil {
-		return
-	}
+// unused function
+// func parseAccessToken(token string) (payload jwt.Token, err error) {
+// 	c, err := config.LoadConfig(".")
+// 	if err != nil {
+// 		return
+// 	}
 
-	payload, err = jwt.Parse([]byte(token), jwt.WithKey(jwa.HS256, []byte(c.JWTAccessTokenSecret)))
-	return
-}
+// 	payload, err = jwt.Parse([]byte(token), jwt.WithKey(jwa.HS256, []byte(c.JWTAccessTokenSecret)))
+// 	return
+// }
 
 func parseRefreshToken(token string) (payload jwt.Token, err error) {
 	c, err := config.LoadConfig(".")

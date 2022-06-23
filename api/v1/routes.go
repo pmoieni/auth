@@ -16,7 +16,14 @@ type userInfoRes struct {
 	Email    string `json:"email"`
 }
 
+// initialize the routes available for this API
 func (s *Server) initRoutes() {
+	c := middleware.CORSConfig{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+		AllowCredentials: true,
+	}
+	s.Handler.Use(middleware.CORSWithConfig(c))
 	s.Handler.Use(middleware.Secure())
 	// TODO: add CSRF protection
 	// s.Handler.Use(middleware.CSRF())
@@ -64,6 +71,7 @@ func (s *Server) initRoutes() {
 
 	directAuthGroup.POST("/register", handlers.Register)
 	directAuthGroup.POST("/login", handlers.Login)
+	directAuthGroup.POST("/logout", handlers.Logout)
 	directAuthGroup.GET("/token", handlers.RefreshToken)
 
 	// OIDCAuthGroup := authGroup.Group("/oauth")

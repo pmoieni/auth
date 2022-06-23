@@ -17,6 +17,8 @@ var RefreshTokenDB *redis.Client
 var ClientIDDB *redis.Client
 var PasswordResetTokenDB *redis.Client
 
+// database used for storing used refresh tokens.
+// this way we can detect refresh token reuse if happens
 func CreateRefreshTokenDatabase(addr, password string) (err error) {
 	RefreshTokenDB = redis.NewClient(&redis.Options{
 		Addr:     addr,
@@ -27,6 +29,8 @@ func CreateRefreshTokenDatabase(addr, password string) (err error) {
 	return
 }
 
+// database for storing client ids of refresh tokens.
+// the refresh tokens which match with the client ids inside this database are invalidated
 func CreateClientIDDatabase(addr, password string) (err error) {
 	ClientIDDB = redis.NewClient(&redis.Options{
 		Addr:     addr,

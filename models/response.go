@@ -5,6 +5,7 @@ type ErrorResponse struct {
 	Message string
 }
 
+// custom error type for detecting known application errors
 func (e *ErrorResponse) Error() string {
 	return e.Message
 }

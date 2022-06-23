@@ -7,6 +7,7 @@ import (
 	"github.com/pmoieni/auth/models"
 )
 
+// custom error handler for unknown error types. responds with error 500 when an unknown error occures
 func customHTTPErrorHandler(err error, c echo.Context) {
 	e := models.ErrorResponse{
 		Status:  http.StatusInternalServerError,

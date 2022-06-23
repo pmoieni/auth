@@ -85,7 +85,7 @@ func ResetPassword(r *PasswordResetReq) error {
 		return err
 	}
 
-	// check ifnew password is valid
+	// check if new password is valid
 	err = validatePassword(r.NewPassword)
 	if err != nil {
 		return &models.ErrorResponse{Status: http.StatusForbidden, Message: errBadPassword}

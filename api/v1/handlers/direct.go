@@ -70,14 +70,30 @@ func Login(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, res)
 }
 
+func Logout(c echo.Context) (err error) {
+	// remove refresh token cookie
+	cookie := &http.Cookie{
+		// Domain:   "example.com",
+		Path:     refreshTokenCookiePath,
+		Name:     refreshTokenCookieName,
+		Value:    "",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Expires:  time.Unix(0, 0),
+	}
+
+	c.SetCookie(cookie)
+	return c.JSON(http.StatusOK, "success")
+}
+
 func RefreshToken(c echo.Context) (err error) {
-	at := c.Request().Header.Get(authorizationHeader)
 	rtCookie, err := c.Cookie(refreshTokenCookieName)
 	if err != nil {
 		return
 	}
 
-	tokens, err := direct.RefreshToken(rtCookie.Value, at)
+	tokens, err := direct.RefreshToken(rtCookie.Value)
 	if err != nil {
 		return
 	}
