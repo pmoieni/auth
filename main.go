@@ -8,6 +8,9 @@ import (
 )
 
 func main() {
+	// initialize logger
+	log.InitLogger()
+
 	config, err := config.LoadConfig(".")
 	if err != nil {
 		log.Logger.Fatal("failed to read env file: " + err.Error())

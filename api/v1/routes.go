@@ -71,8 +71,10 @@ func (s *Server) initRoutes() {
 
 	directAuthGroup.POST("/register", handlers.Register)
 	directAuthGroup.POST("/login", handlers.Login)
+	directAuthGroup.GET("/logout", handlers.Logout)
 	directAuthGroup.POST("/logout", handlers.Logout)
 	directAuthGroup.GET("/token", handlers.RefreshToken)
+	directAuthGroup.POST("/token", handlers.RefreshToken)
 
 	// OIDCAuthGroup := authGroup.Group("/oauth")
 
